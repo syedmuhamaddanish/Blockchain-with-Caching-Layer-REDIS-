@@ -16,10 +16,10 @@ const path = require("path");
 
 
 const ethers = require('ethers');
-//Define port
-//Define request response in root URL (/)
+
 
 (async () => {
+    //Initializing Redis Client
     redisClient = redis.createClient();
   
     redisClient.on("error", (error) => console.error(`Error : ${error}`));
@@ -27,28 +27,28 @@ const ethers = require('ethers');
     await redisClient.connect();
 })();
 
+//Serving index.html
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-
+// Function to define the API call from Redis
 async function getSpeciesData(req, res) {
-    const dateID = req.params.dateID;
+    const dateID = req.params.dateID;  //Search corresponding IPFS hash from a certain date
     let results;
-    let isCached = false;
-
-
-
-    
+    let isCached = false;    //Variable to see if the result is from Cache or not
 
 
     const cacheResults = await redisClient.get(dateID);
-    
+    // If data is avaiable in cache, set isCached true
     if (cacheResults != "") {
         isCached = true;
         results = JSON.parse(cacheResults);
     } 
+  
+  //run else if data is not available in cache
     else {
+      // initializing blockchain to call smart contract function to retreive IPFS hash
         const API_URL = process.env.API_URL;
         const PRIVATE_KEY = process.env.PRIVATE_KEY;
         const CONTRACT_ADDRESS_1 = process.env.CONTRACT_ADDRESS;
@@ -73,7 +73,7 @@ async function getSpeciesData(req, res) {
             
     }
     
-
+    //Send response to front-end with cached data
     res.send({
        fromCache: isCached,
        data: results,
@@ -81,7 +81,7 @@ async function getSpeciesData(req, res) {
 
 }
 
-
+// API call to receive the cached data
 app.get("/date/:dateID", getSpeciesData);
 
 
